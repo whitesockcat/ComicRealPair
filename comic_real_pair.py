@@ -1,3 +1,11 @@
+
+import os
+import pandas as pd
+from PIL import Image
+
+pair_path = 'pair_list.csv'
+pair_list = pd.read_csv(pair_path, sep=',', header=0)
+
 import random
 from PIL import Image
 import torch
@@ -8,48 +16,35 @@ import numpy as np
 class ComicRealPairDataset(Dataset):
     
     def __init__(self,
-                pic_dir,
-                ann_dir,
-                transform=None):
-        self.pic_dir = pic_dir 
-        self.ann_dir = ann_dir  
+                 pair_list,
+                 is_training = True,
+                 pic_dir = 'train_mix/',
+                 transform=None):
+        self.pic_dir = pic_dir
         self.transform = transform
-        comic_num = 100
-        real_num = 150
-        # 选一个数量多的
-        self.ids = [i for i in range(real_num)]
-
-    def _get_path1(self, idx, isSame = True):
-        path1 = None
-        return path1
-
-    def _get_path0(self, idx):
-        name = 'abc.jpg' # TODO
-        path0 = self.pic_dir + name
-        return path0
-
-    def _get_target(self, isSame):
-        target = torch.from_numpy(np.array([isSame])) # TODO
-        return target
+        self.is_training = is_training
+        self.pair_list = pair_list
+        real_num = len(self.pair_list)
+        self.ids = [i for i in range(real_num)]# 选real作总数
 
     def __getitem__(self,index):
-        img_id = self.ids[index]
-        is_same_class = random.randint(0,1)
-
-        path0 = self._get_path0(img_id)
-        path1 = self._get_path1(img_id, is_same_class)
-
-        img0 = Image.open(path0).convert('RGB')
-        img1 = Image.open(path1).convert('RGB')
+        idx = self.ids[index]
+        
+        real_path = self.pic_dir + self.pair_list.iat[idx, 0]
+        comi_path = self.pic_dir + self.pair_list.iat[idx, 1]
+        
+        real_img = Image.open(real_path).convert('L')#RGB
+        comi_img = Image.open(comi_path).convert('L')#RGB
         
         if self.transform is not None:
-            img0 = self.transform(img0)
-            img1 = self.transform(img1)
-        
-        target = self._get_target(is_same_class)
-
-        return img0, img1, target
+            real_img = self.transform(real_img)
+            comi_img = self.transform(comi_img)
+            
+        if self.is_training:
+            target = int(self.pair_list.iat[idx, 2])
+            return real_img, comi_img, target
+        else:
+            return real_img, comi_img
     
     def __len__(self):
         return len(self.ids)
-
