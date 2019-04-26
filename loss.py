@@ -33,12 +33,13 @@ class ContrastiveLoss(torch.nn.Module):
 
     def forward(self, output1, output2, label):
         euclidean_distance = F.pairwise_distance(output1, output2)
-        label = label.type(torch.FloatTensor)
+        label = label.type(torch.cuda.FloatTensor)
         x = (1-label)
-        y = torch.pow(euclidean_distance, 2)
+        y = torch.pow(euclidean_distance, 2).type(torch.cuda.FloatTensor)
         a = x * y
-        b = (label * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
-        loss_contrastive = torch.mean((a + b))
+        b = (label * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2)).type(torch.cuda.FloatTensor)
+        # loss_contrastive = torch.mean((a + b).float())
+        loss_contrastive = (a+b).mean()
 #         loss_contrastive = torch.mean((1-label) * torch.pow(euclidean_distance, 2) +
 #                                       (label) * torch.pow(torch.clamp(self.margin - euclidean_distance, min=0.0), 2))
 
