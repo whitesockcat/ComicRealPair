@@ -24,8 +24,8 @@ import pandas as pd
 class Config():
     training_dir = "train_mix/"
     testing_dir = "./data/faces/testing/"# TODO
-    train_batch_size = 4 # 64
-    train_number_epochs = 5 #100
+    train_batch_size = 128
+    train_number_epochs = 10 #100
 
 from comic_real_pair import ComicRealPairDataset
 from network import SiameseNetwork
@@ -45,7 +45,7 @@ train_dataloader = DataLoader(pair_dataset,
                         num_workers=0,
                         batch_size=Config.train_batch_size)
 
-net = SiameseNetwork()
+net = SiameseNetwork().cuda()
 criterion = ContrastiveLoss()
 optimizer = optim.Adam(net.parameters(),lr = 0.0005 )
 
@@ -56,8 +56,8 @@ iteration_number= 0
 for epoch in range(0,Config.train_number_epochs):
     for i, data in enumerate(train_dataloader,0):
         img0, img1 , label = data
-#         img0, img1 , label = img0.cuda(), img1.cuda() , label.cuda()
-        img0, img1 , label = torch.tensor(img0, requires_grad=True), torch.tensor(img1, requires_grad=True), torch.tensor(label, requires_grad=True)
+        img0, img1 , label = img0.cuda(), img1.cuda() , label.cuda()
+        # img0, img1 , label = torch.tensor(img0, requires_grad=True), torch.tensor(img1, requires_grad=True), torch.tensor(label, requires_grad=True)
         optimizer.zero_grad()
         output1,output2 = net(img0,img1)
         loss_contrastive = criterion(output1,output2,label)
